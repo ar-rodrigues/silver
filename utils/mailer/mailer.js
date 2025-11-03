@@ -30,7 +30,7 @@ export async function sendEmail(email, name, password, subject, body) {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: subject || "Bienvenido al servicio de DICA MX",
+      subject: subject || "Bienvenido",
       html: body,
     };
 

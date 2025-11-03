@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   RiUserLine,
   RiLockLine,
@@ -38,6 +39,11 @@ export default function LoginPage() {
     const message = searchParams.get("message");
     if (message === "signup_success") {
       setShowSuccess(true);
+    } else if (message === "password_reset_success") {
+      // Show success message for password reset on login form
+      setErrorMessage(null);
+      // Clear any existing success state and ensure login tab is active
+      setActiveTab("login");
     }
   }, [searchParams]);
 
@@ -132,6 +138,17 @@ export default function LoginPage() {
             ]}
           >
             <Password prefixIcon={<RiLockLine />} placeholder="Contraseña" />
+          </Form.Item>
+
+          <Form.Item className="mb-0">
+            <div className="text-right">
+              <Link
+                href="/forgot-password"
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </Form.Item>
 
           <Form.Item>
@@ -303,6 +320,18 @@ export default function LoginPage() {
                 showIcon
                 closable
                 onClose={() => setErrorMessage(null)}
+                className="mb-6"
+              />
+            )}
+
+            {/* Success Alert for Password Reset */}
+            {searchParams.get("message") === "password_reset_success" && (
+              <Alert
+                message="Contraseña restablecida exitosamente"
+                description="Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión con tu nueva contraseña."
+                type="success"
+                showIcon
+                closable
                 className="mb-6"
               />
             )}

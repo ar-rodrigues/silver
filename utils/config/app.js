@@ -10,6 +10,8 @@ export const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/auth",
+  "/forgot-password",
+  "/reset-password",
   "/public",
   "/about",
   "/contact",
@@ -153,7 +155,7 @@ export const PRIVATE_MENU = [
     label: "Componentes",
   },
   {
-    key: "/private/profile",
+    key: "/profile",
     iconName: "RiUserLine",
     label: "Mi Perfil",
   },
