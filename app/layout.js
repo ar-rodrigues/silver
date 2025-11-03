@@ -1,4 +1,6 @@
 import "./globals.css";
+import "antd/dist/reset.css";
+import AntdProvider from "@/components/providers/AntdProvider";
 
 export const metadata = {
   title: "Mi Proyecto",
@@ -8,8 +10,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
-      <body>{children}</body>
+    <html lang="es" suppressHydrationWarning>
+      <body>
+        <AntdProvider>{children}</AntdProvider>
+      </body>
     </html>
   );
 }

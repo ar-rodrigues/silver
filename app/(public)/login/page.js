@@ -10,346 +10,320 @@ import {
   RiCheckLine,
   RiArrowLeftLine,
 } from "react-icons/ri";
-import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@/hooks/useUser";
 import { login, signup } from "./actions";
+import { Form, Tabs, Card, Typography, Space, Alert } from "antd";
+import Input from "@/components/ui/Input";
+import Password from "@/components/ui/Password";
+import Button from "@/components/ui/Button";
+
+const { Title, Paragraph, Text } = Typography;
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState({});
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loginForm] = Form.useForm();
+  const [signupForm] = Form.useForm();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+
+  // Check if user is already logged in and redirect if so
+  useUser({ redirectIfAuthenticated: true });
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        router.push("/private");
-      }
-    };
-    checkUser();
-
     // Check for success message
     const message = searchParams.get("message");
     if (message === "signup_success") {
       setShowSuccess(true);
     }
-  }, [supabase.auth, router, searchParams]);
+  }, [searchParams]);
 
-  const validateForm = (type) => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = "Por favor ingresa tu email";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Por favor ingresa un email válido";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Por favor ingresa tu contraseña";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres";
-    }
-
-    if (type === "signup" && !formData.confirmPassword) {
-      newErrors.confirmPassword = "Por favor confirma tu contraseña";
-    } else if (
-      type === "signup" &&
-      formData.password !== formData.confirmPassword
-    ) {
-      newErrors.confirmPassword = "Las contraseñas no coinciden";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!validateForm("login")) return;
-
+  const handleLogin = async (values) => {
     setLoading(true);
+    setErrorMessage(null); // Clear previous errors
     const formDataObj = new FormData();
-    formDataObj.append("email", formData.email);
-    formDataObj.append("password", formData.password);
+    formDataObj.append("email", values.email);
+    formDataObj.append("password", values.password);
 
     startTransition(async () => {
       try {
-        await login(formDataObj);
+        const result = await login(formDataObj);
+
+        // Check if login returned an error object
+        if (result && result.error) {
+          setErrorMessage(result.message);
+          setLoading(false);
+        }
+        // If no error object returned, login was successful and redirect happened
       } catch (error) {
-        // Handle any actual errors (not redirects)
+        // Handle unexpected errors
+        setErrorMessage(
+          "Ocurrió un error inesperado. Por favor, intenta nuevamente."
+        );
+        setLoading(false);
         console.error("Login error:", error);
-        setLoading(false);
       }
     });
   };
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    if (!validateForm("signup")) return;
-
+  const handleSignup = async (values) => {
     setLoading(true);
+    setErrorMessage(null); // Clear previous errors
     const formDataObj = new FormData();
-    formDataObj.append("email", formData.email);
-    formDataObj.append("password", formData.password);
+    formDataObj.append("email", values.email);
+    formDataObj.append("password", values.password);
 
     startTransition(async () => {
       try {
-        await signup(formDataObj);
+        const result = await signup(formDataObj);
+
+        // Check if signup returned an error object
+        if (result && result.error) {
+          setErrorMessage(result.message);
+          setLoading(false);
+        }
+        // If no error object returned, signup was successful and redirect happened
       } catch (error) {
-        // Handle any actual errors (not redirects)
-        console.error("Signup error:", error);
+        // Handle unexpected errors
+        setErrorMessage(
+          "Ocurrió un error inesperado. Por favor, intenta nuevamente."
+        );
         setLoading(false);
+        console.error("Signup error:", error);
       }
     });
   };
+
+  const tabItems = [
+    {
+      key: "login",
+      label: "Iniciar Sesión",
+      children: (
+        <Form
+          form={loginForm}
+          onFinish={handleLogin}
+          layout="vertical"
+          requiredMark={false}
+        >
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Por favor ingresa tu email" },
+              {
+                type: "email",
+                message: "Por favor ingresa un email válido",
+              },
+            ]}
+          >
+            <Input prefixIcon={<RiMailLine />} placeholder="Email" />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[
+              { required: true, message: "Por favor ingresa tu contraseña" },
+              {
+                min: 6,
+                message: "La contraseña debe tener al menos 6 caracteres",
+              },
+            ]}
+          >
+            <Password prefixIcon={<RiLockLine />} placeholder="Contraseña" />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading || isPending}
+              className="w-full"
+              size="large"
+            >
+              Iniciar Sesión
+            </Button>
+          </Form.Item>
+        </Form>
+      ),
+    },
+    {
+      key: "signup",
+      label: "Crear Cuenta",
+      children: (
+        <Form
+          form={signupForm}
+          onFinish={handleSignup}
+          layout="vertical"
+          requiredMark={false}
+        >
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Por favor ingresa tu email" },
+              {
+                type: "email",
+                message: "Por favor ingresa un email válido",
+              },
+            ]}
+          >
+            <Input prefixIcon={<RiMailLine />} placeholder="Email" />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[
+              { required: true, message: "Por favor ingresa tu contraseña" },
+              {
+                min: 6,
+                message: "La contraseña debe tener al menos 6 caracteres",
+              },
+            ]}
+          >
+            <Password prefixIcon={<RiLockLine />} placeholder="Contraseña" />
+          </Form.Item>
+
+          <Form.Item
+            name="confirmPassword"
+            dependencies={["password"]}
+            rules={[
+              {
+                required: true,
+                message: "Por favor confirma tu contraseña",
+              },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Las contraseñas no coinciden")
+                  );
+                },
+              }),
+            ]}
+          >
+            <Password
+              prefixIcon={<RiLockLine />}
+              placeholder="Confirmar Contraseña"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading || isPending}
+              className="w-full"
+              size="large"
+              style={{ backgroundColor: "#16a34a" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#15803d";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#16a34a";
+              }}
+            >
+              Crear Cuenta
+            </Button>
+          </Form.Item>
+        </Form>
+      ),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <RiRocketLine className="text-4xl text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-800">
+        <Space
+          direction="vertical"
+          size="large"
+          className="w-full text-center mb-8"
+        >
+          <Space size="middle" className="justify-center">
+            <RiRocketLine className="text-4xl text-blue-600" />
+            <Title level={2} className="!mb-0">
               Proyecto Starter
-            </h1>
-          </div>
-          <p className="text-gray-600">
+            </Title>
+          </Space>
+          <Paragraph className="text-gray-600">
             Un proyecto base completo y listo para usar con Next.js 15, Tailwind
             CSS 4 y autenticación
-          </p>
-        </div>
+          </Paragraph>
+        </Space>
 
         {/* Success Message */}
         {showSuccess ? (
-          <div className="bg-white shadow-xl rounded-xl p-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Card>
+            <Space
+              direction="vertical"
+              size="large"
+              className="w-full text-center"
+            >
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                 <RiCheckLine className="text-3xl text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                ¡Cuenta Creada Exitosamente!
-              </h2>
-              <p className="text-gray-600 mb-6">
+              <Title level={3}>¡Cuenta Creada Exitosamente!</Title>
+              <Paragraph className="text-gray-600">
                 Hemos enviado un enlace de confirmación a tu correo electrónico.
                 Por favor, revisa tu bandeja de entrada y haz clic en el enlace
                 para activar tu cuenta.
-              </p>
-              <div className="space-y-3">
-                <button
+              </Paragraph>
+              <Space direction="vertical" className="w-full" size="small">
+                <Button
+                  type="primary"
                   onClick={() => router.push("/")}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer"
+                  className="w-full"
+                  size="large"
                 >
                   Volver al Inicio
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {
                     router.replace("/login");
                     setShowSuccess(false);
                   }}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 cursor-pointer"
+                  className="w-full"
+                  size="large"
+                  icon={<RiArrowLeftLine />}
                 >
-                  <RiArrowLeftLine />
-                  <span>Volver al Login</span>
-                </button>
-              </div>
-            </div>
-          </div>
+                  Volver al Login
+                </Button>
+              </Space>
+            </Space>
+          </Card>
         ) : (
-          <div className="bg-white shadow-xl rounded-xl p-6">
-            {/* Tab Navigation */}
-            <div className="flex mb-6 border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab("login")}
-                className={`flex-1 py-3 px-4 text-center font-medium transition-colors cursor-pointer ${
-                  activeTab === "login"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Iniciar Sesión
-              </button>
-              <button
-                onClick={() => setActiveTab("signup")}
-                className={`flex-1 py-3 px-4 text-center font-medium transition-colors cursor-pointer ${
-                  activeTab === "signup"
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Crear Cuenta
-              </button>
-            </div>
-
-            {/* Login Form */}
-            {activeTab === "login" && (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiMailLine className="text-gray-400" />
-                    </div>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      placeholder="Email"
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.email ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiLockLine className="text-gray-400" />
-                    </div>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange("password", e.target.value)
-                      }
-                      placeholder="Contraseña"
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || isPending}
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loading || isPending ? "Cargando..." : "Iniciar Sesión"}
-                </button>
-              </form>
+          <Card>
+            {/* Error Alert */}
+            {errorMessage && (
+              <Alert
+                message={errorMessage}
+                type="error"
+                showIcon
+                closable
+                onClose={() => setErrorMessage(null)}
+                className="mb-6"
+              />
             )}
 
-            {/* Signup Form */}
-            {activeTab === "signup" && (
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiMailLine className="text-gray-400" />
-                    </div>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      placeholder="Email"
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.email ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiLockLine className="text-gray-400" />
-                    </div>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange("password", e.target.value)
-                      }
-                      placeholder="Contraseña"
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiLockLine className="text-gray-400" />
-                    </div>
-                    <input
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        handleInputChange("confirmPassword", e.target.value)
-                      }
-                      placeholder="Confirmar Contraseña"
-                      className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.confirmPassword
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                    />
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.confirmPassword}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || isPending}
-                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {loading || isPending ? "Cargando..." : "Crear Cuenta"}
-                </button>
-              </form>
-            )}
-          </div>
+            <Tabs
+              activeKey={activeTab}
+              onChange={(key) => {
+                setActiveTab(key);
+                setErrorMessage(null); // Clear errors when switching tabs
+              }}
+              items={tabItems}
+              centered
+            />
+          </Card>
         )}
 
         <div className="text-center mt-6">
-          <p className="text-gray-500 text-sm">
+          <Text type="secondary" className="text-sm">
             Al crear una cuenta o iniciar sesión, aceptas nuestros términos y
             condiciones
-          </p>
+          </Text>
         </div>
       </div>
     </div>

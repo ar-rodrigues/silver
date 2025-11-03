@@ -134,6 +134,32 @@ export const USER_MENU = [
 ];
 
 // ============================================================================
+// MENÚ PRIVADO (Sidebar navigation)
+// ============================================================================
+export const PRIVATE_MENU = [
+  {
+    key: "/private",
+    iconName: "RiDashboardLine",
+    label: "Dashboard",
+  },
+  {
+    key: "/private/features",
+    iconName: "RiRocketLine",
+    label: "Características",
+  },
+  {
+    key: "/private/components",
+    iconName: "RiTeamLine",
+    label: "Componentes",
+  },
+  {
+    key: "/private/profile",
+    iconName: "RiUserLine",
+    label: "Mi Perfil",
+  },
+];
+
+// ============================================================================
 // MENÚ FOOTER
 // ============================================================================
 export const FOOTER_MENU = [
@@ -275,6 +301,14 @@ export function getFilteredUserMenu(isAuthenticated) {
     return [];
   }
   return USER_MENU;
+}
+
+/**
+ * Obtiene el menú privado (sidebar)
+ * @returns {Array} - Menú privado
+ */
+export function getPrivateMenu() {
+  return PRIVATE_MENU;
 }
 
 /**

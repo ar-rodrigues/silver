@@ -7,25 +7,17 @@ import {
   RiLoginBoxLine,
 } from "react-icons/ri";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-import { useEffect, useState } from "react";
+import { useUser } from "@/hooks/useUser";
+import { Layout, Typography, Card, Row, Col, Space, Spin } from "antd";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import Button from "@/components/ui/Button";
+
+const { Title, Paragraph } = Typography;
 
 export default function HomePage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-    getUser();
-  }, [supabase.auth]);
+  const { data: user, loading } = useUser();
 
   const handleLogin = () => {
     router.push("/login");
@@ -38,121 +30,147 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
-        </div>
+        <Space direction="vertical" align="center" size="large">
+          <Spin size="large" />
+          <Paragraph className="text-gray-600">Cargando...</Paragraph>
+        </Space>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center space-x-4">
+    <Layout className="min-h-screen">
+      <Header>
+        <Space size="middle">
           <RiRocketLine className="text-2xl text-blue-600" />
-          <h1 className="text-2xl font-semibold text-gray-800">
+          <Title level={3} className="!mb-0">
             Mi Proyecto
-          </h1>
-        </div>
-        <div className="flex items-center space-x-4">
+          </Title>
+        </Space>
+        <Space size="middle">
           {user ? (
-            <button
-              onClick={handleDashboard}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors cursor-pointer"
-            >
+            <Button type="primary" onClick={handleDashboard}>
               Ir al Dashboard
-            </button>
+            </Button>
           ) : (
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors cursor-pointer"
-            >
-              <RiLoginBoxLine />
-              <span>Iniciar Sesión</span>
-            </button>
+            <Button type="primary" icon={<RiLoginBoxLine />} onClick={handleLogin}>
+              Iniciar Sesión
+            </Button>
           )}
-        </div>
-      </header>
+        </Space>
+      </Header>
 
-      <main className="p-8">
+      <Layout.Content className="p-8">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold text-gray-800 mb-6">
-              Mi Proyecto
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
+          <Space direction="vertical" size="large" className="w-full mb-16 text-center">
+            <Title level={1}>Mi Proyecto</Title>
+            <Paragraph className="text-xl text-gray-600">
               Una base sólida para comenzar tu próximo proyecto web con Next.js
-            </p>
+            </Paragraph>
             {!user && (
-              <button
+              <Button
+                type="primary"
+                size="large"
+                icon={<RiLoginBoxLine />}
                 onClick={handleLogin}
-                className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 text-lg rounded-lg flex items-center space-x-2 mx-auto transition-colors cursor-pointer"
               >
-                <RiLoginBoxLine />
-                <span>Comenzar Ahora</span>
-              </button>
+                Comenzar Ahora
+              </Button>
             )}
-          </div>
+          </Space>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-100 hover:border-blue-300 transition-colors p-6 text-center">
-              <RiRocketLine className="text-5xl text-blue-600 mb-6 mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Inicio Rápido
-              </h3>
-              <p className="text-gray-600 text-base">
-                Configuración lista para usar con Next.js 15, Tailwind CSS y
-                autenticación
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg border-2 border-green-100 hover:border-green-300 transition-colors p-6 text-center">
-              <RiCodeLine className="text-5xl text-green-600 mb-6 mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Código Limpio
-              </h3>
-              <p className="text-gray-600 text-base">
-                Estructura organizada y componentes reutilizables para un
-                desarrollo eficiente
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg border-2 border-purple-100 hover:border-purple-300 transition-colors p-6 text-center">
-              <RiSettingsLine className="text-5xl text-purple-600 mb-6 mx-auto" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Fácil Personalización
-              </h3>
-              <p className="text-gray-600 text-base">
-                Modifica y adapta según tus necesidades específicas del proyecto
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center bg-gray-50 p-12 rounded-lg">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
-              ¿Listo para construir algo increíble?
-            </h2>
-            <p className="text-lg text-gray-600 mb-6">
-              Este starter te da todo lo que necesitas para comenzar tu proyecto
-            </p>
-            {!user && (
-              <button
-                onClick={handleLogin}
-                className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 text-lg rounded-lg transition-colors cursor-pointer"
+          <Row gutter={[32, 32]} className="mb-16">
+            <Col xs={24} md={8}>
+              <Card
+                hoverable
+                className="text-center h-full"
+                styles={{
+                  body: { padding: "24px" },
+                }}
+                style={{
+                  border: "2px solid #dbeafe",
+                }}
               >
-                Crear Cuenta Gratuita
-              </button>
-            )}
-          </div>
+                <Space direction="vertical" size="large" className="w-full">
+                  <RiRocketLine className="text-5xl text-blue-600 mx-auto" />
+                  <Title level={4} className="!mb-0">
+                    Inicio Rápido
+                  </Title>
+                  <Paragraph className="text-gray-600">
+                    Configuración lista para usar con Next.js 15, Tailwind CSS y
+                    autenticación
+                  </Paragraph>
+                </Space>
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card
+                hoverable
+                className="text-center h-full"
+                styles={{
+                  body: { padding: "24px" },
+                }}
+                style={{
+                  border: "2px solid #dcfce7",
+                }}
+              >
+                <Space direction="vertical" size="large" className="w-full">
+                  <RiCodeLine className="text-5xl text-green-600 mx-auto" />
+                  <Title level={4} className="!mb-0">
+                    Código Limpio
+                  </Title>
+                  <Paragraph className="text-gray-600">
+                    Estructura organizada y componentes reutilizables para un
+                    desarrollo eficiente
+                  </Paragraph>
+                </Space>
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card
+                hoverable
+                className="text-center h-full"
+                styles={{
+                  body: { padding: "24px" },
+                }}
+                style={{
+                  border: "2px solid #f3e8ff",
+                }}
+              >
+                <Space direction="vertical" size="large" className="w-full">
+                  <RiSettingsLine className="text-5xl text-purple-600 mx-auto" />
+                  <Title level={4} className="!mb-0">
+                    Fácil Personalización
+                  </Title>
+                  <Paragraph className="text-gray-600">
+                    Modifica y adapta según tus necesidades específicas del proyecto
+                  </Paragraph>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
+
+          <Card className="text-center bg-gray-50">
+            <Space direction="vertical" size="middle" className="w-full">
+              <Title level={2}>¿Listo para construir algo increíble?</Title>
+              <Paragraph className="text-lg text-gray-600">
+                Este starter te da todo lo que necesitas para comenzar tu proyecto
+              </Paragraph>
+              {!user && (
+                <Button type="primary" size="large" onClick={handleLogin}>
+                  Crear Cuenta Gratuita
+                </Button>
+              )}
+            </Space>
+          </Card>
         </div>
-      </main>
+      </Layout.Content>
 
-      <footer className="text-center bg-gray-50 border-t border-gray-200 py-6">
-        <p className="text-gray-500">
+      <Footer>
+        <Paragraph className="text-gray-500 !mb-0">
           © 2024 Mi Proyecto. Todos los derechos reservados.
-        </p>
-      </footer>
-    </div>
+        </Paragraph>
+      </Footer>
+    </Layout>
   );
 }

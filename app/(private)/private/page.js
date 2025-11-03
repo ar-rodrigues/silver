@@ -1,117 +1,107 @@
-import { redirect } from "next/navigation";
+"use client";
+
 import {
   RiUserLine,
   RiRocketLine,
   RiCodeLine,
-  RiArrowLeftLine,
+  RiSettingsLine,
 } from "react-icons/ri";
-import { createClient } from "@/utils/supabase/server";
-import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
+import { Card, Row, Col, Avatar, Typography, Space, Spin } from "antd";
+import Button from "@/components/ui/Button";
 
-export default async function PrivatePage() {
-  const supabase = await createClient();
+const { Title, Paragraph, Text } = Typography;
 
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    redirect("/login");
+export default function PrivatePage() {
+  const { data: user, loading } = useUser({ redirectToLogin: true });
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Space direction="vertical" align="center" size="large">
+          <Spin size="large" />
+          <Paragraph className="text-gray-600">Cargando...</Paragraph>
+        </Space>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center space-x-4">
-          <RiRocketLine className="text-2xl text-blue-600" />
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Dashboard del Proyecto
-          </h1>
+    <div>
+      <Space direction="vertical" size="large" className="w-full">
+        <div className="text-center">
+          <Title level={1}>¡Bienvenido a tu proyecto!</Title>
+          <Paragraph className="text-lg text-gray-600">
+            Esta es una página protegida que demuestra la funcionalidad de
+            autenticación
+          </Paragraph>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <RiUserLine className="text-white text-sm" />
-            </div>
-            <span className="text-gray-700">{data.user.email}</span>
-          </div>
-          <Link href="/">
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-              <RiArrowLeftLine />
-              <span>Volver al Inicio</span>
-            </button>
-          </Link>
-        </div>
-      </header>
 
-      <main className="p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">
-              ¡Bienvenido a tu proyecto!
-            </h1>
-            <p className="text-lg text-gray-600">
-              Esta es una página protegida que demuestra la funcionalidad de
-              autenticación
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Información del Usuario
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                    <RiUserLine className="text-white text-xl" />
-                  </div>
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={12}>
+            <Card title="Información del Usuario">
+              <Space direction="vertical" size="middle" className="w-full">
+                <Space size="middle">
+                  <Avatar
+                    icon={<RiUserLine />}
+                    size="large"
+                    style={{ backgroundColor: "#2563eb" }}
+                  />
                   <div>
-                    <span className="font-semibold">Email:</span>
+                    <Text strong>Email:</Text>
                     <br />
-                    <span>{data.user.email}</span>
+                    <Text>{user?.email || "N/A"}</Text>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3">
+                </Space>
+                <Space size="middle">
                   <RiRocketLine className="text-xl text-green-600" />
                   <div>
-                    <span className="font-semibold">Miembro desde:</span>
+                    <Text strong>Miembro desde:</Text>
                     <br />
-                    <span>
-                      {new Date(data.user.created_at).toLocaleDateString(
-                        "es-ES"
-                      )}
-                    </span>
+                    <Text>
+                      {user?.created_at
+                        ? new Date(user.created_at).toLocaleDateString("es-ES")
+                        : "N/A"}
+                    </Text>
                   </div>
-                </div>
-              </div>
-            </div>
+                </Space>
+              </Space>
+            </Card>
+          </Col>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Acciones Rápidas
-              </h2>
-              <div className="space-y-3">
-                <button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center space-x-2 transition-colors cursor-pointer">
-                  <RiRocketLine />
-                  <span>Crear Nuevo Proyecto</span>
-                </button>
-                <button className="w-full h-12 border border-gray-300 hover:bg-gray-50 rounded-lg flex items-center justify-center space-x-2 transition-colors cursor-pointer">
-                  <RiCodeLine />
-                  <span>Ver Código Fuente</span>
-                </button>
-                <button className="w-full h-12 border border-gray-300 hover:bg-gray-50 rounded-lg flex items-center justify-center space-x-2 transition-colors cursor-pointer">
-                  <span>Configuración</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <Col xs={24} md={12}>
+            <Card title="Acciones Rápidas">
+              <Space direction="vertical" className="w-full" size="small">
+                <Button
+                  type="primary"
+                  icon={<RiRocketLine />}
+                  className="w-full"
+                  size="large"
+                >
+                  Crear Nuevo Proyecto
+                </Button>
+                <Button icon={<RiCodeLine />} className="w-full" size="large">
+                  Ver Código Fuente
+                </Button>
+                <Button
+                  icon={<RiSettingsLine />}
+                  className="w-full"
+                  size="large"
+                >
+                  Configuración
+                </Button>
+              </Space>
+            </Card>
+          </Col>
+        </Row>
 
-          <div className="mt-8 text-center">
-            <p className="text-gray-500">
-              Esta página demuestra que la autenticación está funcionando
-              correctamente
-            </p>
-          </div>
+        <div className="text-center">
+          <Text type="secondary">
+            Esta página demuestra que la autenticación está funcionando
+            correctamente
+          </Text>
         </div>
-      </main>
+      </Space>
     </div>
   );
 }
