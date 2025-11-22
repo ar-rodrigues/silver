@@ -4,7 +4,6 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  RiUserLine,
   RiLockLine,
   RiMailLine,
   RiRocketLine,
@@ -12,8 +11,8 @@ import {
   RiArrowLeftLine,
 } from "react-icons/ri";
 import { useUser } from "@/hooks/useUser";
-import { login, signup } from "./actions";
-import { Form, Tabs, Card, Typography, Space, Alert } from "antd";
+import { login } from "./actions";
+import { Form, Card, Typography, Space, Alert } from "antd";
 import Input from "@/components/ui/Input";
 import Password from "@/components/ui/Password";
 import Button from "@/components/ui/Button";
@@ -22,11 +21,9 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [loginForm] = Form.useForm();
-  const [signupForm] = Form.useForm();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,11 +36,13 @@ export default function LoginPage() {
     const message = searchParams.get("message");
     if (message === "signup_success") {
       setShowSuccess(true);
-    } else if (message === "password_reset_success") {
-      // Show success message for password reset on login form
-      setErrorMessage(null);
-      // Clear any existing success state and ensure login tab is active
-      setActiveTab("login");
+    } else {
+      // Reset showSuccess when message parameter is removed or changed
+      setShowSuccess(false);
+      if (message === "password_reset_success") {
+        // Show success message for password reset on login form
+        setErrorMessage(null);
+      }
     }
   }, [searchParams]);
 
@@ -54,18 +53,18 @@ export default function LoginPage() {
     formDataObj.append("email", values.email);
     formDataObj.append("password", values.password);
 
+    // Call server action within startTransition for proper redirect handling
     startTransition(async () => {
       try {
         const result = await login(formDataObj);
 
-        // Check if login returned an error object
+        // If we get here, there was an error (redirect() throws, so we never reach this)
         if (result && result.error) {
           setErrorMessage(result.message);
           setLoading(false);
         }
-        // If no error object returned, login was successful and redirect happened
       } catch (error) {
-        // Handle unexpected errors
+        // Handle actual errors (redirect errors are automatically handled by Next.js in startTransition)
         setErrorMessage(
           "Ocurrió un error inesperado. Por favor, intenta nuevamente."
         );
@@ -74,181 +73,6 @@ export default function LoginPage() {
       }
     });
   };
-
-  const handleSignup = async (values) => {
-    setLoading(true);
-    setErrorMessage(null); // Clear previous errors
-    const formDataObj = new FormData();
-    formDataObj.append("email", values.email);
-    formDataObj.append("password", values.password);
-
-    startTransition(async () => {
-      try {
-        const result = await signup(formDataObj);
-
-        // Check if signup returned an error object
-        if (result && result.error) {
-          setErrorMessage(result.message);
-          setLoading(false);
-        }
-        // If no error object returned, signup was successful and redirect happened
-      } catch (error) {
-        // Handle unexpected errors
-        setErrorMessage(
-          "Ocurrió un error inesperado. Por favor, intenta nuevamente."
-        );
-        setLoading(false);
-        console.error("Signup error:", error);
-      }
-    });
-  };
-
-  const tabItems = [
-    {
-      key: "login",
-      label: "Iniciar Sesión",
-      children: (
-        <Form
-          form={loginForm}
-          onFinish={handleLogin}
-          layout="vertical"
-          requiredMark={false}
-        >
-          <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: "Por favor ingresa tu email" },
-              {
-                type: "email",
-                message: "Por favor ingresa un email válido",
-              },
-            ]}
-          >
-            <Input prefixIcon={<RiMailLine />} placeholder="Email" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            rules={[
-              { required: true, message: "Por favor ingresa tu contraseña" },
-              {
-                min: 6,
-                message: "La contraseña debe tener al menos 6 caracteres",
-              },
-            ]}
-          >
-            <Password prefixIcon={<RiLockLine />} placeholder="Contraseña" />
-          </Form.Item>
-
-          <Form.Item className="mb-0">
-            <div className="text-right">
-              <Link
-                href="/forgot-password"
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading || isPending}
-              className="w-full"
-              size="large"
-            >
-              Iniciar Sesión
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-    {
-      key: "signup",
-      label: "Crear Cuenta",
-      children: (
-        <Form
-          form={signupForm}
-          onFinish={handleSignup}
-          layout="vertical"
-          requiredMark={false}
-        >
-          <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: "Por favor ingresa tu email" },
-              {
-                type: "email",
-                message: "Por favor ingresa un email válido",
-              },
-            ]}
-          >
-            <Input prefixIcon={<RiMailLine />} placeholder="Email" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            rules={[
-              { required: true, message: "Por favor ingresa tu contraseña" },
-              {
-                min: 6,
-                message: "La contraseña debe tener al menos 6 caracteres",
-              },
-            ]}
-          >
-            <Password prefixIcon={<RiLockLine />} placeholder="Contraseña" />
-          </Form.Item>
-
-          <Form.Item
-            name="confirmPassword"
-            dependencies={["password"]}
-            rules={[
-              {
-                required: true,
-                message: "Por favor confirma tu contraseña",
-              },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("password") === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(
-                    new Error("Las contraseñas no coinciden")
-                  );
-                },
-              }),
-            ]}
-          >
-            <Password
-              prefixIcon={<RiLockLine />}
-              placeholder="Confirmar Contraseña"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading || isPending}
-              className="w-full"
-              size="large"
-              style={{ backgroundColor: "#16a34a" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#15803d";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#16a34a";
-              }}
-            >
-              Crear Cuenta
-            </Button>
-          </Form.Item>
-        </Form>
-      ),
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -336,15 +160,79 @@ export default function LoginPage() {
               />
             )}
 
-            <Tabs
-              activeKey={activeTab}
-              onChange={(key) => {
-                setActiveTab(key);
-                setErrorMessage(null); // Clear errors when switching tabs
-              }}
-              items={tabItems}
-              centered
-            />
+            <Form
+              form={loginForm}
+              onFinish={handleLogin}
+              layout="vertical"
+              requiredMark={false}
+            >
+              <Form.Item
+                name="email"
+                rules={[
+                  { required: true, message: "Por favor ingresa tu email" },
+                  {
+                    type: "email",
+                    message: "Por favor ingresa un email válido",
+                  },
+                ]}
+              >
+                <Input prefixIcon={<RiMailLine />} placeholder="Email" />
+              </Form.Item>
+
+              <Form.Item
+                name="password"
+                rules={[
+                  {
+                    required: true,
+                    message: "Por favor ingresa tu contraseña",
+                  },
+                  {
+                    min: 6,
+                    message: "La contraseña debe tener al menos 6 caracteres",
+                  },
+                ]}
+              >
+                <Password
+                  prefixIcon={<RiLockLine />}
+                  placeholder="Contraseña"
+                />
+              </Form.Item>
+
+              <Form.Item className="mb-0">
+                <div className="text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading || isPending}
+                  className="w-full"
+                  size="large"
+                >
+                  Iniciar Sesión
+                </Button>
+              </Form.Item>
+
+              <div className="text-center mt-4">
+                <Text type="secondary" className="text-sm">
+                  ¿No tienes una cuenta?{" "}
+                  <Link
+                    href="/signup"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Crear cuenta
+                  </Link>
+                </Text>
+              </div>
+            </Form>
           </Card>
         )}
 

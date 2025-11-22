@@ -8,6 +8,7 @@ import {
 } from "react-icons/ri";
 import { useUser } from "@/hooks/useUser";
 import { Card, Row, Col, Avatar, Typography, Space, Spin } from "antd";
+import { formatDateDDMMYYYY } from "@/utils/date";
 import Button from "@/components/ui/Button";
 
 const { Title, Paragraph, Text } = Typography;
@@ -58,11 +59,7 @@ export default function PrivatePage() {
                   <div>
                     <Text strong>Miembro desde:</Text>
                     <br />
-                    <Text>
-                      {user?.created_at
-                        ? new Date(user.created_at).toLocaleDateString("es-ES")
-                        : "N/A"}
-                    </Text>
+                    <Text>{formatDateDDMMYYYY(user?.created_at)}</Text>
                   </div>
                 </Space>
               </Space>

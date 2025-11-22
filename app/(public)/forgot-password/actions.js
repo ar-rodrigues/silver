@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { getBaseUrlFromHeaders } from "@/utils/config/app";
 
 export async function forgotPassword(formData) {
   const supabase = await createClient();
@@ -14,15 +15,7 @@ export async function forgotPassword(formData) {
   }
 
   // Get the base URL for redirect
-  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  
-  if (!baseUrl) {
-    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      baseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-    } else {
-      baseUrl = "http://localhost:3000";
-    }
-  }
+  const baseUrl = await getBaseUrlFromHeaders();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${baseUrl}/auth/reset-password?type=recovery`,
@@ -38,7 +31,8 @@ export async function forgotPassword(formData) {
   // Return success (don't redirect here, let the page handle it)
   return {
     error: false,
-    message: "Se ha enviado un enlace de restablecimiento a tu correo electrónico.",
+    message:
+      "Se ha enviado un enlace de restablecimiento a tu correo electrónico.",
   };
 }
 
@@ -66,4 +60,3 @@ function getForgotPasswordErrorMessage(errorMessage) {
   // Default to a generic error message
   return "Ocurrió un error al enviar el enlace de restablecimiento. Por favor, intenta nuevamente.";
 }
-

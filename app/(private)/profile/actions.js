@@ -2,22 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import { getBaseUrlFromHeaders } from "@/utils/config/app";
 
 /**
  * Change Password Server Action
- * 
+ *
  * Allows authenticated users to change their password by verifying their current password first.
- * 
+ *
  * KNOWN ISSUE - Supabase Warning:
  * After calling updateUser(), you may see a warning:
  * "Using the user object as returned from supabase.auth.getSession() could be insecure!"
- * 
+ *
  * This is a KNOWN FALSE POSITIVE from Supabase's internal code. The updateUser()
  * method internally uses getSession() in some code paths, which triggers this warning.
- * 
+ *
  * Our code is secure - we always use getUser() to verify authentication before
  * calling updateUser(). This warning does not affect functionality and can be safely ignored.
- * 
+ *
  * References:
  * - https://github.com/supabase/auth-js/issues/910
  * - https://github.com/supabase/auth-js/issues/873
@@ -157,20 +158,20 @@ function getChangePasswordErrorMessage(errorMessage) {
 
 /**
  * Change Email Server Action
- * 
+ *
  * Allows authenticated users to change their email by verifying their current password first.
  * Supabase will send a confirmation email to the new address that must be verified before the change takes effect.
- * 
+ *
  * KNOWN ISSUE - Supabase Warning:
  * After calling updateUser(), you may see a warning:
  * "Using the user object as returned from supabase.auth.getSession() could be insecure!"
- * 
+ *
  * This is a KNOWN FALSE POSITIVE from Supabase's internal code. The updateUser()
  * method internally uses getSession() in some code paths, which triggers this warning.
- * 
+ *
  * Our code is secure - we always use getUser() to verify authentication before
  * calling updateUser(). This warning does not affect functionality and can be safely ignored.
- * 
+ *
  * References:
  * - https://github.com/supabase/auth-js/issues/910
  * - https://github.com/supabase/auth-js/issues/873
@@ -263,15 +264,7 @@ export async function changeEmail(formData) {
   }
 
   // Get the base URL for redirect
-  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  
-  if (!baseUrl) {
-    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      baseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-    } else {
-      baseUrl = "http://localhost:3000";
-    }
-  }
+  const baseUrl = await getBaseUrlFromHeaders();
 
   // Update the user's email (Supabase will send a confirmation email)
   // Supabase will automatically add token_hash and type parameters to the redirect URL
@@ -292,7 +285,8 @@ export async function changeEmail(formData) {
   revalidatePath("/profile", "page");
   return {
     error: false,
-    message: "Se ha enviado un correo de confirmación a tu nuevo email. Por favor, verifica tu correo para completar el cambio.",
+    message:
+      "Se ha enviado un correo de confirmación a tu nuevo email. Por favor, verifica tu correo para completar el cambio.",
   };
 }
 
@@ -305,8 +299,7 @@ function getChangeEmailErrorMessage(errorMessage) {
       "La contraseña actual no es correcta. Por favor, verifica e intenta nuevamente.",
     "Email already registered":
       "Este email ya está registrado. Por favor, usa otro email.",
-    "Invalid email address":
-      "Por favor, ingresa un email válido.",
+    "Invalid email address": "Por favor, ingresa un email válido.",
     "User not found":
       "No se encontró tu cuenta. Por favor, contacta al soporte.",
     "Email rate limit exceeded":
@@ -325,4 +318,3 @@ function getChangeEmailErrorMessage(errorMessage) {
   // Default to a generic error message
   return "Ocurrió un error al cambiar el email. Por favor, intenta nuevamente.";
 }
-

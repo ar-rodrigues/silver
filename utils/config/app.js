@@ -320,3 +320,80 @@ export function getPrivateMenu() {
 export function getAppConfig() {
   return APP_CONFIG;
 }
+
+/**
+ * Obtiene la URL base de la aplicación (versión síncrona)
+ * Si DEVELOPMENT es "true", retorna localhost, de lo contrario usa WEBSITE_URL
+ * Si WEBSITE_URL no está definido, intenta obtener la URL del request actual
+ * Funciona tanto en cliente como en servidor
+ * @returns {string} - URL base de la aplicación
+ */
+export function getBaseUrl() {
+  // Check if we're in development mode
+  const isDevelopment =
+    process.env.DEVELOPMENT === "true" ||
+    process.env.NEXT_PUBLIC_DEVELOPMENT === "true";
+
+  if (isDevelopment) {
+    return "http://localhost:3000";
+  }
+
+  // Check if WEBSITE_URL is defined
+  const websiteUrl = process.env.WEBSITE_URL;
+
+  if (websiteUrl) {
+    return websiteUrl;
+  }
+
+  // If WEBSITE_URL is not defined, try to get it from the current request
+  // Client-side: use window.location.origin
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  // Server-side: fallback to localhost
+  // Note: For server actions that need the actual request URL,
+  // use getBaseUrlFromHeaders() instead
+  return "http://localhost:3000";
+}
+
+/**
+ * Obtiene la URL base de la aplicación desde los headers del request (versión asíncrona)
+ * Úsalo en server actions cuando necesites la URL real del request
+ * @returns {Promise<string>} - URL base de la aplicación
+ */
+export async function getBaseUrlFromHeaders() {
+  // Check if we're in development mode
+  const isDevelopment =
+    process.env.DEVELOPMENT === "true" ||
+    process.env.NEXT_PUBLIC_DEVELOPMENT === "true";
+
+  if (isDevelopment) {
+    return "http://localhost:3000";
+  }
+
+  // Check if WEBSITE_URL is defined
+  const websiteUrl = process.env.WEBSITE_URL;
+
+  if (websiteUrl) {
+    return websiteUrl;
+  }
+
+  // Try to get from request headers (server-side only)
+  try {
+    const { headers } = await import("next/headers");
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = headersList.get("x-forwarded-proto") || "https";
+
+    if (host) {
+      return `${protocol}://${host}`;
+    }
+  } catch (error) {
+    // headers() might not be available in all contexts
+    // fall through to default
+  }
+
+  // Fallback to localhost if nothing else works
+  return "http://localhost:3000";
+}

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { getBaseUrl } from "@/utils/config/app";
 
 /**
  * Custom hook for password reset operations
@@ -14,64 +15,66 @@ export function usePasswordReset(options = {}) {
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
 
-  const sendResetEmail = useCallback(async (email) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setSuccess(false);
+  const sendResetEmail = useCallback(
+    async (email) => {
+      try {
+        setLoading(true);
+        setError(null);
+        setSuccess(false);
 
-      const baseUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        (process.env.NEXT_PUBLIC_VERCEL_URL
-          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-          : "http://localhost:3000");
+        const baseUrl = getBaseUrl();
 
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${baseUrl}/auth/reset-password?type=recovery`,
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo: `${baseUrl}/auth/reset-password?type=recovery`,
+          }
+        );
+
+        if (resetError) {
+          setError(resetError);
+          setSuccess(false);
+        } else {
+          setSuccess(true);
+          setError(null);
         }
-      );
-
-      if (resetError) {
-        setError(resetError);
+      } catch (err) {
+        setError(err);
         setSuccess(false);
-      } else {
-        setSuccess(true);
-        setError(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err);
-      setSuccess(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+    },
+    [supabase]
+  );
 
-  const resetPassword = useCallback(async (password) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setSuccess(false);
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (updateError) {
-        setError(updateError);
+  const resetPassword = useCallback(
+    async (password) => {
+      try {
+        setLoading(true);
+        setError(null);
         setSuccess(false);
-      } else {
-        setSuccess(true);
-        setError(null);
+
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: password,
+        });
+
+        if (updateError) {
+          setError(updateError);
+          setSuccess(false);
+        } else {
+          setSuccess(true);
+          setError(null);
+        }
+      } catch (err) {
+        setError(err);
+        setSuccess(false);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err);
-      setSuccess(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+    },
+    [supabase]
+  );
 
   return {
     loading,
@@ -81,5 +84,3 @@ export function usePasswordReset(options = {}) {
     resetPassword,
   };
 }
-
-

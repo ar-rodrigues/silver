@@ -21,6 +21,7 @@ import {
   Descriptions,
   Spin,
 } from "antd";
+import { formatDateDDMMYYYY } from "@/utils/date";
 import Password from "@/components/ui/Password";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -28,7 +29,9 @@ import Button from "@/components/ui/Button";
 const { Title, Paragraph, Text } = Typography;
 
 export default function ProfilePage() {
-  const { data: user, loading: userLoading } = useUser({ redirectToLogin: true });
+  const { data: user, loading: userLoading } = useUser({
+    redirectToLogin: true,
+  });
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -123,17 +126,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Format date in Spanish locale
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   // Format user ID to show only first and last 4 characters
   const formatUserId = (userId) => {
     if (!userId || userId.length < 9) return userId;
@@ -186,9 +178,7 @@ export default function ProfilePage() {
                       <Text strong>ID de Usuario</Text>
                     </Space>
                   ),
-                  children: (
-                    <Text code>{formatUserId(user?.id) || "N/A"}</Text>
-                  ),
+                  children: <Text code>{formatUserId(user?.id) || "N/A"}</Text>,
                 },
                 {
                   key: "createdAt",
@@ -198,9 +188,7 @@ export default function ProfilePage() {
                       <Text strong>Miembro desde</Text>
                     </Space>
                   ),
-                  children: (
-                    <Text>{formatDate(user?.created_at) || "N/A"}</Text>
-                  ),
+                  children: <Text>{formatDateDDMMYYYY(user?.created_at)}</Text>,
                 },
                 {
                   key: "lastSignIn",
@@ -211,11 +199,7 @@ export default function ProfilePage() {
                     </Space>
                   ),
                   children: (
-                    <Text>
-                      {user?.last_sign_in_at
-                        ? formatDate(user.last_sign_in_at)
-                        : "N/A"}
-                    </Text>
+                    <Text>{formatDateDDMMYYYY(user?.last_sign_in_at)}</Text>
                   ),
                 },
               ]}
@@ -371,7 +355,8 @@ export default function ProfilePage() {
                 Cambiar Email
               </Title>
               <Paragraph className="text-gray-600">
-                Ingresa tu contraseña actual y tu nuevo email. Recibirás un correo de confirmación.
+                Ingresa tu contraseña actual y tu nuevo email. Recibirás un
+                correo de confirmación.
               </Paragraph>
             </div>
 
@@ -533,4 +518,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
